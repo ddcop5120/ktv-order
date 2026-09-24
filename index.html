@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🔥 KTV 包廂點歌台 (Top 50)</title>
+  <title>🎤 KTV 包廂點歌台 (Top 50)</title>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -23,69 +23,53 @@
       font-size: 14px;
       margin-bottom: 20px;
     }
-    .song-list {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      max-width: 600px;
-      margin: 0 auto;
-    }
+    .song-list { display: flex; flex-direction: column; gap: 10px; max-width: 600px; margin: 0 auto; }
     .song-item {
-      background: #1e1e1e;
-      border-radius: 8px;
-      padding: 12px 16px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+      background: #1e1e1e; border-radius: 8px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;
     }
-    .song-info {
-      display: flex;
-      flex-direction: column;
-    }
-    .song-title {
-      font-size: 16px;
-      font-weight: bold;
-      color: #fff;
-    }
-    .song-artist {
-      font-size: 13px;
-      color: #ffa500;
-      margin-top: 4px;
-    }
-    .btn-request {
-      background-color: #ff4757;
-      color: white;
-      border: none;
-      padding: 8px 16px;
-      border-radius: 20px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    .btn-request:disabled {
-      background-color: #555;
-      cursor: not-allowed;
-    }
-    #loading {
-      text-align: center;
-      font-size: 18px;
-      color: #ffa500;
-      margin-top: 50px;
-    }
+    .song-info { display: flex; flex-direction: column; }
+    .song-title { font-size: 16px; font-weight: bold; color: #fff; }
+    .song-artist { font-size: 13px; color: #ffa500; margin-top: 4px; }
+    .btn-request { background-color: #ff4757; color: white; border: none; padding: 8px 16px; border-radius: 20px; font-weight: bold; cursor: pointer; }
+    .btn-request:disabled { background-color: #555; cursor: not-allowed; }
     #toast {
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background-color: #2ed573;
-      color: white;
-      padding: 12px 24px;
-      border-radius: 30px;
-      font-weight: bold;
-      display: none;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-      z-index: 1000;
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background-color: #2ed573;
+      color: white; padding: 12px 24px; border-radius: 30px; font-weight: bold; display: none; z-index: 2000;
     }
+
+    /* 多版本選擇的 Modal 樣式 */
+    .modal-overlay {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.85); z-index: 1000; justify-content: center; align-items: center;
+    }
+    .modal-content {
+      background: #1e1e1e; padding: 20px; border-radius: 12px; width: 90%; max-width: 500px;
+      max-height: 80vh; display: flex; flex-direction: column;
+    }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    .modal-title { font-size: 16px; color: #ffa500; font-weight: bold; margin: 0; }
+    .btn-close { background: none; border: none; color: #fff; font-size: 20px; cursor: pointer; }
+    
+    /* 搜尋結果清單 (可滑動) */
+    .search-results-container {
+      overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding-right: 5px;
+    }
+    .result-item {
+      background: #2a2a2a; padding: 12px; border-radius: 8px; text-align: left;
+    }
+    .result-title { font-size: 14px; color: #fff; line-height: 1.4; margin-bottom: 6px; }
+    .result-channel { font-size: 12px; color: #aaa; margin-bottom: 10px; }
+    .result-actions { display: flex; gap: 10px; }
+    
+    .btn-listen {
+      background-color: #ff0000; color: white; text-decoration: none; padding: 8px 0;
+      border-radius: 6px; font-size: 13px; font-weight: bold; flex: 1; text-align: center;
+    }
+    .btn-pick {
+      background-color: #2ed573; color: white; border: none; padding: 8px 0;
+      border-radius: 6px; font-size: 13px; font-weight: bold; cursor: pointer; flex: 1;
+    }
+    .btn-pick:disabled { background-color: #555; cursor: not-allowed; }
   </style>
 </head>
 <body>
@@ -93,30 +77,55 @@
   <h1>🎤 包廂點歌台</h1>
   <p class="subtitle">KTV 熱門點播 Top 50 實時排行榜</p>
   
-  <div id="loading">⏳ 正在載入熱門 50 首歌單...</div>
+  <div id="loading" style="text-align:center; color:#ffa500; margin-top:50px;">⏳ 正在載入熱門 50 首歌單...</div>
   <div class="song-list" id="songList"></div>
-  <div id="toast">點歌中...</div>
+  <div id="toast">訊息</div>
+
+  <!-- 多選預覽視窗 -->
+  <div class="modal-overlay" id="previewModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">請挑選您要的 KTV 版本</h3>
+        <button class="btn-close" onclick="closeModal()">✖</button>
+      </div>
+      <!-- 動態載入搜尋結果的框框 -->
+      <div id="searchResults" class="search-results-container"></div>
+    </div>
+  </div>
 
   <script>
-    // ⚠️ 貼上你在 Google Apps Script 獲得的 URL
+    // ⚠️ 貼上你剛剛部署的「新版本」 API 網址
     const API_URL = 'https://script.google.com/macros/s/AKfycbx4e7XN2-o-dvUGAibugTgqD24FClWuwhygzPO34jrUKUKtH443pWMiA9MKvfX6ulWR/exec';
+    
+    let currentButton = null; 
 
-    // 頁面載入時，自動從後端取得 50 首歌
+    const fallbackSongs = [
+      { id: 1, title: "如果可以", artist: "韋禮安" },
+      { id: 2, title: "孤勇者", artist: "陳奕迅" },
+      { id: 3, title: "閣愛妳一擺", artist: "茄子蛋" },
+      { id: 4, title: "好不容易", artist: "告五人" },
+      { id: 5, title: "我很好騙", artist: "動力火車" },
+      { id: 6, title: "想見你想見你想見你", artist: "八三夭" },
+      { id: 7, title: "怎麼了", artist: "周興哲" },
+      { id: 8, title: "刻在我心底的名字", artist: "盧廣仲" },
+      { id: 9, title: "修煉愛情", artist: "林俊傑" },
+      { id: 10, title: "擱淺", artist: "周杰倫" }
+    ];
+
     window.onload = async () => {
       try {
         const response = await fetch(API_URL);
         const data = await response.json();
-        
-        if (data.status === 'success') {
+        if (data.status === 'success' && data.songs) {
           document.getElementById('loading').style.display = 'none';
           renderSongs(data.songs);
+          return;
         }
-      } catch (err) {
-        document.getElementById('loading').innerText = '❌ 歌單載入失敗，請重新整理網頁';
-      }
+      } catch (err) { }
+      document.getElementById('loading').style.display = 'none';
+      renderSongs(fallbackSongs);
     };
 
-    // 渲染 50 首歌列表
     function renderSongs(songs) {
       const container = document.getElementById('songList');
       songs.forEach(song => {
@@ -127,34 +136,101 @@
             <span class="song-title">${song.id}. ${song.title}</span>
             <span class="song-artist">${song.artist}</span>
           </div>
-          <button class="btn-request" onclick="requestSong('${song.title}', '${song.artist}', this)">點歌</button>
+          <button class="btn-request" onclick="requestSong('${song.title}', '${song.artist}', this)">搜尋版本</button>
         `;
         container.appendChild(item);
       });
     }
 
-    // 點擊點歌發送請求
+    // 點擊「搜尋版本」
     async function requestSong(songName, artist, btn) {
       btn.disabled = true;
-      showToast(`🔍 正在 YouTube 尋找《${songName}》KTV 字幕版...`, "#ffa500");
+      let originalText = btn.innerText;
+      btn.innerText = '搜尋中...';
+      currentButton = btn;
 
       try {
         const response = await fetch(API_URL, {
           method: 'POST',
-          body: JSON.stringify({ songName, artist })
+          body: JSON.stringify({ action: 'search', songName, artist })
         });
         const result = await response.json();
 
         if (result.status === 'success') {
-          showToast(`✅ 已將 KTV 影片加入播放清單！`, "#2ed573");
-          btn.innerText = '已點播';
+          openModal(result.results); // 傳入 5 筆影片資料
+          btn.innerText = '挑選中';
         } else {
-          showToast(`❌ 點歌失敗: ${result.message}`, "#ff4757");
+          showToast(`❌ 搜尋失敗: ${result.message}`, "#ff4757");
           btn.disabled = false;
+          btn.innerText = originalText;
         }
       } catch (err) {
         showToast(`❌ 發生錯誤，請稍後再試`, "#ff4757");
         btn.disabled = false;
+        btn.innerText = originalText;
+      }
+    }
+
+    // 展開 5 個版本的選項
+    function openModal(results) {
+      const container = document.getElementById('searchResults');
+      container.innerHTML = ''; // 清空舊搜尋
+      
+      results.forEach(video => {
+        const item = document.createElement('div');
+        item.className = 'result-item';
+        item.innerHTML = `
+          <div class="result-title">${video.title}</div>
+          <div class="result-channel">頻道: ${video.channel}</div>
+          <div class="result-actions">
+            <a class="btn-listen" href="https://www.youtube.com/watch?v=${video.videoId}" target="_blank">▶️ 試聽</a>
+            <button class="btn-pick" onclick="confirmAddSong('${video.videoId}', this)">✅ 就是這首</button>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+      
+      document.getElementById('previewModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+      document.getElementById('previewModal').style.display = 'none';
+      if (currentButton) {
+         currentButton.disabled = false;
+         currentButton.innerText = '搜尋版本';
+      }
+    }
+
+    // 按下「就是這首」，送出影片 ID 加進歌單
+    async function confirmAddSong(videoId, pickBtn) {
+      // 避免重複狂點，把所有按鈕先鎖起來
+      const allPickBtns = document.querySelectorAll('.btn-pick');
+      allPickBtns.forEach(b => b.disabled = true);
+      pickBtn.innerText = '加入中...';
+
+      try {
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({ action: 'addToList', videoId: videoId })
+        });
+        const result = await response.json();
+
+        if (result.status === 'success') {
+          showToast(`✅ 已將指定版本加入播放清單！`, "#2ed573");
+          document.getElementById('previewModal').style.display = 'none';
+          if (currentButton) {
+            currentButton.innerText = '已點播';
+            currentButton.style.backgroundColor = '#2ed573';
+          }
+        } else {
+          showToast(`❌ 點歌失敗: ${result.message}`, "#ff4757");
+          pickBtn.innerText = '✅ 就是這首';
+          allPickBtns.forEach(b => b.disabled = false);
+        }
+      } catch (err) {
+        showToast(`❌ 發生錯誤，請稍後再試`, "#ff4757");
+        pickBtn.innerText = '✅ 就是這首';
+        allPickBtns.forEach(b => b.disabled = false);
       }
     }
 
