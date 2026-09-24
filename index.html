@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🔥 KTV 包廂點歌台 (Top 50)</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: #121212;
+      color: #ffffff;
+      margin: 0;
+      padding: 15px;
+    }
+    h1 {
+      text-align: center;
+      color: #ff4757;
+      margin-bottom: 5px;
+    }
+    p.subtitle {
+      text-align: center;
+      color: #888;
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+    .song-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .song-item {
+      background: #1e1e1e;
+      border-radius: 8px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    }
+    .song-info {
+      display: flex;
+      flex-direction: column;
+    }
+    .song-title {
+      font-size: 16px;
+      font-weight: bold;
+      color: #fff;
+    }
+    .song-artist {
+      font-size: 13px;
+      color: #ffa500;
+      margin-top: 4px;
+    }
+    .btn-request {
+      background-color: #ff4757;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .btn-request:disabled {
+      background-color: #555;
+      cursor: not-allowed;
+    }
+    #loading {
+      text-align: center;
+      font-size: 18px;
+      color: #ffa500;
+      margin-top: 50px;
+    }
+    #toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #2ed573;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 30px;
+      font-weight: bold;
+      display: none;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+      z-index: 1000;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🎤 包廂點歌台</h1>
+  <p class="subtitle">KTV 熱門點播 Top 50 實時排行榜</p>
+  
+  <div id="loading">⏳ 正在載入熱門 50 首歌單...</div>
+  <div class="song-list" id="songList"></div>
+  <div id="toast">點歌中...</div>
+
+  <script>
+    // ⚠️ 貼上你在 Google Apps Script 獲得的 URL
+    const API_URL = 'https://script.google.com/macros/s/AKfycbx4e7XN2-o-dvUGAibugTgqD24FClWuwhygzPO34jrUKUKtH443pWMiA9MKvfX6ulWR/exec';
+
+    // 頁面載入時，自動從後端取得 50 首歌
+    window.onload = async () => {
+      try {
+        const response = await fetch(API_URL);
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+          document.getElementById('loading').style.display = 'none';
+          renderSongs(data.songs);
+        }
+      } catch (err) {
+        document.getElementById('loading').innerText = '❌ 歌單載入失敗，請重新整理網頁';
+      }
+    };
+
+    // 渲染 50 首歌列表
+    function renderSongs(songs) {
+      const container = document.getElementById('songList');
+      songs.forEach(song => {
+        const item = document.createElement('div');
+        item.className = 'song-item';
+        item.innerHTML = `
+          <div class="song-info">
+            <span class="song-title">${song.id}. ${song.title}</span>
+            <span class="song-artist">${song.artist}</span>
+          </div>
+          <button class="btn-request" onclick="requestSong('${song.title}', '${song.artist}', this)">點歌</button>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    // 點擊點歌發送請求
+    async function requestSong(songName, artist, btn) {
+      btn.disabled = true;
+      showToast(`🔍 正在 YouTube 尋找《${songName}》KTV 字幕版...`, "#ffa500");
+
+      try {
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({ songName, artist })
+        });
+        const result = await response.json();
+
+        if (result.status === 'success') {
+          showToast(`✅ 已將 KTV 影片加入播放清單！`, "#2ed573");
+          btn.innerText = '已點播';
+        } else {
+          showToast(`❌ 點歌失敗: ${result.message}`, "#ff4757");
+          btn.disabled = false;
+        }
+      } catch (err) {
+        showToast(`❌ 發生錯誤，請稍後再試`, "#ff4757");
+        btn.disabled = false;
+      }
+    }
+
+    function showToast(msg, bgColor) {
+      const toast = document.getElementById('toast');
+      toast.innerText = msg;
+      toast.style.backgroundColor = bgColor;
+      toast.style.display = 'block';
+      setTimeout(() => { toast.style.display = 'none'; }, 3500);
+    }
+  </script>
+</body>
+</html>
