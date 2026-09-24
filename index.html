@@ -3,178 +3,252 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🎤 KTV 包廂點歌台 (Top 50)</title>
+  <title>🎤 豪華 KTV 點歌台</title>
   <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background-color: #121212;
-      color: #ffffff;
-      margin: 0;
-      padding: 15px;
-    }
-    h1 {
-      text-align: center;
-      color: #ff4757;
-      margin-bottom: 5px;
-    }
-    p.subtitle {
-      text-align: center;
-      color: #888;
-      font-size: 14px;
-      margin-bottom: 20px;
-    }
-    .song-list { display: flex; flex-direction: column; gap: 10px; max-width: 600px; margin: 0 auto; }
-    .song-item {
-      background: #1e1e1e; border-radius: 8px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;
-    }
-    .song-info { display: flex; flex-direction: column; }
-    .song-title { font-size: 16px; font-weight: bold; color: #fff; }
-    .song-artist { font-size: 13px; color: #ffa500; margin-top: 4px; }
-    .btn-request { background-color: #ff4757; color: white; border: none; padding: 8px 16px; border-radius: 20px; font-weight: bold; cursor: pointer; }
-    .btn-request:disabled { background-color: #555; cursor: not-allowed; }
-    #toast {
-      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background-color: #2ed573;
-      color: white; padding: 12px 24px; border-radius: 30px; font-weight: bold; display: none; z-index: 2000;
-    }
+    body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background-color: #121212; color: #fff; margin: 0; padding: 10px; padding-top: 20px;}
+    .header-box { display: flex; justify-content: space-between; align-items: center; max-width: 600px; margin: 0 auto 15px auto; }
+    h1 { color: #ff4757; font-size: 24px; margin: 0; }
+    .btn-help { background: #4a4a4a; color: white; border: none; padding: 6px 12px; border-radius: 20px; font-size: 12px; cursor: pointer; }
+    
+    /* 搜尋列 */
+    .search-box { display: flex; max-width: 600px; margin: 0 auto 15px auto; gap: 8px; }
+    .search-box input { flex: 1; padding: 10px 15px; border-radius: 20px; border: none; background: #2a2a2a; color: #fff; outline: none; }
+    .search-box button { background: #ff4757; color: white; border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; }
 
-    /* 多版本選擇的 Modal 樣式 */
-    .modal-overlay {
-      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0, 0, 0, 0.85); z-index: 1000; justify-content: center; align-items: center;
-    }
-    .modal-content {
-      background: #1e1e1e; padding: 20px; border-radius: 12px; width: 90%; max-width: 500px;
-      max-height: 80vh; display: flex; flex-direction: column;
-    }
+    /* 分類標籤 (可橫向滑動) */
+    .tabs-container { display: flex; gap: 10px; max-width: 600px; margin: 0 auto 20px auto; overflow-x: auto; padding-bottom: 5px; white-space: nowrap; scrollbar-width: none; }
+    .tabs-container::-webkit-scrollbar { display: none; }
+    .tab-btn { background: #2a2a2a; color: #aaa; border: none; padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: bold; cursor: pointer; }
+    .tab-btn.active { background: #ff4757; color: white; }
+    .tab-btn.requested { background: #2ed573; color: white; }
+
+    /* 歌曲列表 */
+    .song-list { display: flex; flex-direction: column; gap: 10px; max-width: 600px; margin: 0 auto; }
+    .song-item { background: #1e1e1e; border-radius: 8px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; }
+    .song-info { display: flex; flex-direction: column; }
+    .song-title { font-size: 16px; font-weight: bold; color: #fff; margin-bottom: 4px; }
+    .song-artist { font-size: 13px; color: #ffa500; }
+    .btn-request { background-color: #ff4757; color: white; border: none; padding: 8px 16px; border-radius: 20px; font-weight: bold; cursor: pointer; }
+    .btn-request:disabled { background-color: #555; }
+
+    /* 彈出視窗共用 */
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; }
+    .modal-content { background: #1e1e1e; padding: 20px; border-radius: 12px; width: 90%; max-width: 500px; max-height: 80vh; display: flex; flex-direction: column; }
     .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
     .modal-title { font-size: 16px; color: #ffa500; font-weight: bold; margin: 0; }
     .btn-close { background: none; border: none; color: #fff; font-size: 20px; cursor: pointer; }
     
-    /* 搜尋結果清單 (可滑動) */
-    .search-results-container {
-      overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding-right: 5px;
-    }
-    .result-item {
-      background: #2a2a2a; padding: 12px; border-radius: 8px; text-align: left;
-    }
+    /* 版本選擇清單 */
+    .search-results-container { overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+    .result-item { background: #2a2a2a; padding: 12px; border-radius: 8px; }
     .result-title { font-size: 14px; color: #fff; line-height: 1.4; margin-bottom: 6px; }
     .result-channel { font-size: 12px; color: #aaa; margin-bottom: 10px; }
     .result-actions { display: flex; gap: 10px; }
-    
-    .btn-listen {
-      background-color: #ff0000; color: white; text-decoration: none; padding: 8px 0;
-      border-radius: 6px; font-size: 13px; font-weight: bold; flex: 1; text-align: center;
-    }
-    .btn-pick {
-      background-color: #2ed573; color: white; border: none; padding: 8px 0;
-      border-radius: 6px; font-size: 13px; font-weight: bold; cursor: pointer; flex: 1;
-    }
-    .btn-pick:disabled { background-color: #555; cursor: not-allowed; }
+    .btn-listen { background-color: #ff0000; color: white; text-decoration: none; padding: 8px 0; border-radius: 6px; font-size: 13px; font-weight: bold; flex: 1; text-align: center; }
+    .btn-pick { background-color: #2ed573; color: white; border: none; padding: 8px 0; border-radius: 6px; font-size: 13px; font-weight: bold; cursor: pointer; flex: 1; }
+
+    /* 說明書文字 */
+    .help-text { font-size: 14px; line-height: 1.6; color: #ddd; overflow-y: auto;}
+    .help-text h4 { color: #ff4757; margin-top: 15px; margin-bottom: 5px; }
+
+    #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background-color: #2ed573; color: white; padding: 12px 24px; border-radius: 30px; font-weight: bold; display: none; z-index: 2000; }
   </style>
 </head>
 <body>
 
-  <h1>🎤 包廂點歌台</h1>
-  <p class="subtitle">KTV 熱門點播 Top 50 實時排行榜</p>
-  
-  <div id="loading" style="text-align:center; color:#ffa500; margin-top:50px;">⏳ 正在載入熱門 50 首歌單...</div>
+  <div class="header-box">
+    <h1>🎤 豪華 KTV 點歌台</h1>
+    <button class="btn-help" onclick="openHelp()">📖 使用說明</button>
+  </div>
+
+  <!-- 關鍵字搜尋列 -->
+  <div class="search-box">
+    <input type="text" id="searchInput" placeholder="找不到歌？直接輸入歌名或歌手...">
+    <button onclick="manualSearch()">搜尋</button>
+  </div>
+
+  <!-- 分類標籤 -->
+  <div class="tabs-container" id="tabsContainer">
+    <button class="tab-btn active" onclick="switchTab('國語', this)">國語</button>
+    <button class="tab-btn" onclick="switchTab('饒舌', this)">饒舌</button>
+    <button class="tab-btn" onclick="switchTab('台語', this)">台語</button>
+    <button class="tab-btn" onclick="switchTab('韓文', this)">韓文</button>
+    <button class="tab-btn requested" onclick="switchTab('已點', this)">📜 已點歌曲</button>
+  </div>
+
+  <div id="loading" style="text-align:center; color:#ffa500; margin-top:30px;">⏳ 載入歌單中...</div>
   <div class="song-list" id="songList"></div>
   <div id="toast">訊息</div>
 
-  <!-- 多選預覽視窗 -->
+  <!-- 說明書 Modal -->
+  <div class="modal-overlay" id="helpModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">📖 點歌台使用說明</h3>
+        <button class="btn-close" onclick="closeHelp()">✖</button>
+      </div>
+      <div class="help-text">
+        <h4>1. 怎麼點歌？</h4>
+        您可以從下方的分類榜單挑選，或者直接在上方搜尋框輸入想唱的歌名。
+        <h4>2. 為什麼要挑選版本？</h4>
+        YouTube 上有很多路人翻唱版。系統會優先找出「原聲原影 + 伴唱字幕」的版本，請按「▶️試聽」確認畫面與聲音是您要的，再按「✅就是這首」。
+        <h4>3. 怕重複點歌？</h4>
+        點擊最右邊的綠色標籤【📜 已點歌曲】，就可以看見大家剛剛點了什麼歌囉！
+      </div>
+    </div>
+  </div>
+
+  <!-- 版本選擇 Modal -->
   <div class="modal-overlay" id="previewModal">
     <div class="modal-content">
       <div class="modal-header">
-        <h3 class="modal-title">請挑選您要的 KTV 版本</h3>
-        <button class="btn-close" onclick="closeModal()">✖</button>
+        <h3 class="modal-title">🔍 請挑選 KTV 版本</h3>
+        <button class="btn-close" onclick="closePreview()">✖</button>
       </div>
-      <!-- 動態載入搜尋結果的框框 -->
       <div id="searchResults" class="search-results-container"></div>
     </div>
   </div>
 
   <script>
-    // ⚠️ 貼上你剛剛部署的「新版本」 API 網址
+    // ⚠️ 請貼上你部署好的 API URL
     const API_URL = 'https://script.google.com/macros/s/AKfycbx4e7XN2-o-dvUGAibugTgqD24FClWuwhygzPO34jrUKUKtH443pWMiA9MKvfX6ulWR/exec';
     
+    let songDatabase = {}; 
+    let requestedSongs = []; // 紀錄已點歌曲
     let currentButton = null; 
-
-    const fallbackSongs = [
-      { id: 1, title: "如果可以", artist: "韋禮安" },
-      { id: 2, title: "孤勇者", artist: "陳奕迅" },
-      { id: 3, title: "閣愛妳一擺", artist: "茄子蛋" },
-      { id: 4, title: "好不容易", artist: "告五人" },
-      { id: 5, title: "我很好騙", artist: "動力火車" },
-      { id: 6, title: "想見你想見你想見你", artist: "八三夭" },
-      { id: 7, title: "怎麼了", artist: "周興哲" },
-      { id: 8, title: "刻在我心底的名字", artist: "盧廣仲" },
-      { id: 9, title: "修煉愛情", artist: "林俊傑" },
-      { id: 10, title: "擱淺", artist: "周杰倫" }
-    ];
+    let pendingSongInfo = null; // 暫存正在點的那首歌的資訊
 
     window.onload = async () => {
       try {
         const response = await fetch(API_URL);
         const data = await response.json();
-        if (data.status === 'success' && data.songs) {
+        if (data.status === 'success') {
+          songDatabase = data.database;
           document.getElementById('loading').style.display = 'none';
-          renderSongs(data.songs);
-          return;
+          renderSongs(songDatabase["國語"]); // 預設顯示國語
         }
-      } catch (err) { }
-      document.getElementById('loading').style.display = 'none';
-      renderSongs(fallbackSongs);
+      } catch (err) {
+        document.getElementById('loading').innerText = "❌ 載入失敗，請重新整理";
+      }
     };
 
+    // 切換分類 Tab
+    function switchTab(category, btn) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      
+      if (category === '已點') {
+        renderRequestedSongs();
+      } else {
+        renderSongs(songDatabase[category] || []);
+      }
+    }
+
+    // 渲染資料庫歌單
     function renderSongs(songs) {
       const container = document.getElementById('songList');
+      container.innerHTML = '';
+      if(songs.length === 0) {
+        container.innerHTML = '<div style="text-align:center; color:#888;">此分類暫無歌曲</div>';
+        return;
+      }
       songs.forEach(song => {
         const item = document.createElement('div');
         item.className = 'song-item';
         item.innerHTML = `
           <div class="song-info">
-            <span class="song-title">${song.id}. ${song.title}</span>
+            <span class="song-title">${song.title}</span>
             <span class="song-artist">${song.artist}</span>
           </div>
-          <button class="btn-request" onclick="requestSong('${song.title}', '${song.artist}', this)">搜尋版本</button>
+          <button class="btn-request" onclick="requestFromDB('${song.title}', '${song.artist}', this)">搜尋版本</button>
         `;
         container.appendChild(item);
       });
     }
 
-    // 點擊「搜尋版本」
-    async function requestSong(songName, artist, btn) {
+    // 渲染已點歌曲
+    function renderRequestedSongs() {
+      const container = document.getElementById('songList');
+      container.innerHTML = '';
+      if(requestedSongs.length === 0) {
+        container.innerHTML = '<div style="text-align:center; color:#888; margin-top:20px;">目前還沒有人點歌喔！</div>';
+        return;
+      }
+      // 倒序顯示，最新的在最上面
+      [...requestedSongs].reverse().forEach((song, index) => {
+        const item = document.createElement('div');
+        item.className = 'song-item';
+        item.innerHTML = `
+          <div class="song-info">
+            <span class="song-title">${requestedSongs.length - index}. ${song.title}</span>
+            <span class="song-artist">${song.artist || '手動搜尋'}</span>
+          </div>
+          <span style="color:#2ed573; font-weight:bold; font-size:12px;">✅ 已加入清單</span>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    // 手動關鍵字搜尋
+    async function manualSearch() {
+      const query = document.getElementById('searchInput').value.trim();
+      if (!query) return;
+      
+      document.getElementById('searchInput').value = '';
+      showToast(`🔍 正在搜尋: ${query}`, "#ffa500");
+      
+      // 暫存資訊用於加入已點清單
+      pendingSongInfo = { title: query, artist: '' };
+      
+      try {
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({ action: 'search', isManual: true, query: query })
+        });
+        const result = await response.json();
+        
+        if (result.status === 'success') {
+          openPreview(result.results);
+        } else {
+          showToast(`❌ 找不到相關影片`, "#ff4757");
+        }
+      } catch (err) {
+        showToast(`❌ 發生錯誤`, "#ff4757");
+      }
+    }
+
+    // 從榜單點歌
+    async function requestFromDB(songName, artist, btn) {
       btn.disabled = true;
       let originalText = btn.innerText;
       btn.innerText = '搜尋中...';
       currentButton = btn;
+      pendingSongInfo = { title: songName, artist: artist };
 
       try {
         const response = await fetch(API_URL, {
           method: 'POST',
-          body: JSON.stringify({ action: 'search', songName, artist })
+          body: JSON.stringify({ action: 'search', isManual: false, songName, artist })
         });
         const result = await response.json();
 
         if (result.status === 'success') {
-          openModal(result.results); // 傳入 5 筆影片資料
+          openPreview(result.results);
           btn.innerText = '挑選中';
         } else {
-          showToast(`❌ 搜尋失敗: ${result.message}`, "#ff4757");
-          btn.disabled = false;
-          btn.innerText = originalText;
+          showToast(`❌ 搜尋失敗`, "#ff4757");
+          btn.disabled = false; btn.innerText = originalText;
         }
       } catch (err) {
-        showToast(`❌ 發生錯誤，請稍後再試`, "#ff4757");
-        btn.disabled = false;
-        btn.innerText = originalText;
+        showToast(`❌ 發生錯誤`, "#ff4757");
+        btn.disabled = false; btn.innerText = originalText;
       }
     }
 
     // 展開 5 個版本的選項
-    function openModal(results) {
+    function openPreview(results) {
       const container = document.getElementById('searchResults');
-      container.innerHTML = ''; // 清空舊搜尋
+      container.innerHTML = ''; 
       
       results.forEach(video => {
         const item = document.createElement('div');
@@ -189,11 +263,10 @@
         `;
         container.appendChild(item);
       });
-      
       document.getElementById('previewModal').style.display = 'flex';
     }
 
-    function closeModal() {
+    function closePreview() {
       document.getElementById('previewModal').style.display = 'none';
       if (currentButton) {
          currentButton.disabled = false;
@@ -201,9 +274,8 @@
       }
     }
 
-    // 按下「就是這首」，送出影片 ID 加進歌單
+    // 按下「就是這首」
     async function confirmAddSong(videoId, pickBtn) {
-      // 避免重複狂點，把所有按鈕先鎖起來
       const allPickBtns = document.querySelectorAll('.btn-pick');
       allPickBtns.forEach(b => b.disabled = true);
       pickBtn.innerText = '加入中...';
@@ -216,19 +288,25 @@
         const result = await response.json();
 
         if (result.status === 'success') {
-          showToast(`✅ 已將指定版本加入播放清單！`, "#2ed573");
+          showToast(`✅ 已成功加入包廂清單！`, "#2ed573");
+          
+          // 紀錄到已點清單
+          if (pendingSongInfo) {
+            requestedSongs.push(pendingSongInfo);
+          }
+
           document.getElementById('previewModal').style.display = 'none';
           if (currentButton) {
             currentButton.innerText = '已點播';
             currentButton.style.backgroundColor = '#2ed573';
           }
         } else {
-          showToast(`❌ 點歌失敗: ${result.message}`, "#ff4757");
+          showToast(`❌ 加入失敗`, "#ff4757");
           pickBtn.innerText = '✅ 就是這首';
           allPickBtns.forEach(b => b.disabled = false);
         }
       } catch (err) {
-        showToast(`❌ 發生錯誤，請稍後再試`, "#ff4757");
+        showToast(`❌ 發生錯誤`, "#ff4757");
         pickBtn.innerText = '✅ 就是這首';
         allPickBtns.forEach(b => b.disabled = false);
       }
@@ -241,6 +319,10 @@
       toast.style.display = 'block';
       setTimeout(() => { toast.style.display = 'none'; }, 3500);
     }
+    
+    // 說明書視窗控制
+    function openHelp() { document.getElementById('helpModal').style.display = 'flex'; }
+    function closeHelp() { document.getElementById('helpModal').style.display = 'none'; }
   </script>
 </body>
 </html>
